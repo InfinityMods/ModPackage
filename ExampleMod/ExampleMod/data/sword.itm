@@ -1,0 +1,10 @@
+ BACKUP "ExampleMod/backup"
+SUPPORT "https://forums.beamdog.com/..."
+VERSION "0.1.0"
+
+BEGIN "ExampleMod" DESIGNATED 1000 LABEL "ExampleMod"
+
+    PRINT "%MOD_FOLDER%"
+
+    OUTER_SET ID = ID_OF_LABEL "ExampleMod.tp2" "ExampleMod"
+    PRINT "%ID%"
