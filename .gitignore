@@ -4,8 +4,11 @@ backup/
 temp/
 tmp/
 
+readme.md
+
 .*
 !/.gitignore
+!/.gitattributes
 
 *.bak
 *.bat
@@ -13,11 +16,10 @@ tmp/
 *.tmp
 
 *.7z
+*.iemod
 *.rar
 *.zip
 *.tar*
-
-*.iemod
 
 Thumbs.db
 ehthumbs.db
