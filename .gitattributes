@@ -1,0 +1,14 @@
+*.gitignore text export-ignore eol=crlf
+*.gitattributes text export-ignore eol=crlf
+
+*.bcs text eol=lf
+
+*.eff binary
+*.exe binary
+*.gif binary
+*.ico binary
+*.jpg binary
+*.png binary
+*.spl binary
+
+* text eol=crlf
