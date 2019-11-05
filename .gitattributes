@@ -1,5 +1,5 @@
-*.gitignore text export-ignore eol=crlf
-*.gitattributes text export-ignore eol=crlf
+*.gitignore text eol=crlf export-ignore
+*.gitattributes text eol=crlf export-ignore
 
 *.bcs text eol=lf
 
