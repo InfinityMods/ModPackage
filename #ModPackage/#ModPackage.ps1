@@ -1,4 +1,4 @@
-param($ModTopDirectory)
+param([Parameter(Mandatory)]$ModTopDirectory)
 
 function Get-IEModVersion ($Path) {
     $regexVersion = [Regex]::new('.*?VERSION(\s*)(|~"|~|"|)(@.+|.+)("~|"|~|)(|\s*)', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
