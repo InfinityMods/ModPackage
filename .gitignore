@@ -5,9 +5,10 @@ temp/
 tmp/
 
 .*
-!/.gitconfig
-!/.gitignore
 !/.gitattributes
+!/.gitconfig
+!/.github
+!/.gitignore
 
 *.bak
 *.bat
