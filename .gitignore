@@ -10,6 +10,7 @@ tmp/
 !/.github
 !/.gitignore
 
+*.7z
 *.bak
 *.bat
 *.iemod
