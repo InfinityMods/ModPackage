@@ -44,8 +44,8 @@ function New-UniversalModPackage {
         }
 
         Remove-Item $tempDir -Recurse -Force -EA 0 | Out-Null
-        New-Item -Path $tempDir\$outIEMod\$ModID -ItemType Directory  -Force | Out-Null
-        New-Item -Path $tempDir\$outZip\$ModID -ItemType Directory  -Force | Out-Null
+        New-Item -Path $tempDir\$outIEMod\$ModID -ItemType Directory -Force | Out-Null
+        New-Item -Path $tempDir\$outZip\$ModID -ItemType Directory -Force | Out-Null
 
     }
     process {
