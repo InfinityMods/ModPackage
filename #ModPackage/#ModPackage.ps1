@@ -77,7 +77,7 @@ function New-UniversalModPackage {
 
         # Copy latest WeiDU versions
         Copy-Item "$tempDir\WeiDU-Windows\bin\amd64\weidu.exe" "$tempDir\$outZip\$weiduExeBaseName.exe" | Out-Null
-        Copy-Item "$tempDir\WeiDU-Mac\bin\amd64\weidu" "$tempDir\$outZip\$weiduExeBaseName" | Out-Null
+        Copy-Item "$tempDir\WeiDU-Mac\bin\amd64\weidu" "$tempDir\$outZip\$($weiduExeBaseName.tolower())" | Out-Null
 
         # Create .command script
         'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' | Out-File -FilePath "$tempDir\$outZip\$($weiduExeBaseName.tolower()).command" | Out-Null
