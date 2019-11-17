@@ -28,7 +28,18 @@ function New-UniversalModPackage {
         $ModVersion = Get-IEModVersion -Path $ModMainFile.FullName
         if ($null -eq $ModVersion -or $ModVersion -eq '') { $ModVersion = '0.0.0' }
 
-        $PackageBaseName = "$ModID-$ModVersion"
+        $iniData = try { Get-Content $ModTopDirectory\$ModID\$ModID.ini -EA 0 } catch { }
+        if ($iniData) {
+            $ModDisplayName = (($iniData | ? { $_ -notlike "*#*" -and $_ -like "Name*=*" }) -split '=')[1].TrimStart(' ').TrimEnd(' ')
+
+            # Github release asset name limitation
+            $ModDisplayName = $ModDisplayName -replace "\s",'-'
+
+            $PackageName = "$ModDisplayName-$ModVersion"
+
+        } else {
+            $PackageName = "$($ModID -replace "\s",'-')-$($ModVersion -replace "\s",'-')"
+        }
 
         # cleanup old files
         Remove-Item -Path "$ModTopDirectory\*.iemod" -Force -EA 0 | Out-Null
@@ -56,10 +67,10 @@ function New-UniversalModPackage {
         #iemod package
         Copy-Item -Path $ModTopDirectory\$ModID\* -Destination $tempDir\$outIEMod\$ModID -Recurse -Exclude $regexAny | Out-Null
 
-        Write-Host "Creating $PackageBaseName.iemod" -ForegroundColor Green
+        Write-Host "Creating $PackageName.iemod" -ForegroundColor Green
 
-        Compress-Archive -Path $tempDir\$outIEMod\* -DestinationPath "$ModTopDirectory\$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
-        Rename-Item -Path "$ModTopDirectory\$PackageBaseName.zip" -NewName "$PackageBaseName.iemod" -Force | Out-Null
+        Compress-Archive -Path $tempDir\$outIEMod\* -DestinationPath "$ModTopDirectory\$PackageName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Rename-Item -Path "$ModTopDirectory\$PackageName.zip" -NewName "$PackageName.iemod" -Force | Out-Null
 
         # zip package
         Copy-Item -Path $ModTopDirectory\$ModID\* -Destination $tempDir\$outZip\$ModID -Recurse -Exclude $regexAny | Out-Null
@@ -82,9 +93,9 @@ function New-UniversalModPackage {
         # Create .command script
         'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' | Out-File -FilePath "$tempDir\$outZip\$($weiduExeBaseName.tolower()).command" | Out-Null
 
-        Write-Host "Creating $PackageBaseName.zip" -ForegroundColor Green
+        Write-Host "Creating $PackageName.zip" -ForegroundColor Green
 
-        Compress-Archive -Path $tempDir\$outZip\* -DestinationPath "$ModTopDirectory\$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Compress-Archive -Path $tempDir\$outZip\* -DestinationPath "$ModTopDirectory\$PackageName.zip" -Force -CompressionLevel Optimal | Out-Null
     }
     end {
         if ($excludedAny) {
