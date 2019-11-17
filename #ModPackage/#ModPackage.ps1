@@ -33,9 +33,7 @@ function New-UniversalModPackage {
             $ModDisplayName = (($iniData | ? { $_ -notlike "*#*" -and $_ -like "Name*=*" }) -split '=')[1].TrimStart(' ').TrimEnd(' ')
 
             # Github release asset name limitation
-            $ModDisplayName = $ModDisplayName -replace "\s",'-'
-
-            $PackageName = "$ModDisplayName-$ModVersion"
+            $PackageName = "$($ModDisplayName -replace "\s",'-')-$($ModVersion -replace "\s",'-')"
 
         } else {
             $PackageName = "$($ModID -replace "\s",'-')-$($ModVersion -replace "\s",'-')"
