@@ -89,7 +89,7 @@ function New-UniversalModPackage {
         Copy-Item "$tempDir\WeiDU-Mac\bin\amd64\weidu" "$tempDir\$outZip\$($weiduExeBaseName.tolower())" | Out-Null
 
         # Create .command script
-        'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' | Out-File -FilePath "$tempDir\$outZip\$($weiduExeBaseName.tolower()).command" | Out-Null
+        'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' + "`n" | Set-Content -Path "$tempDir\$outZip\$($weiduExeBaseName.tolower()).command" | Out-Null
 
         Write-Host "Creating $PackageName.zip" -ForegroundColor Green
 
