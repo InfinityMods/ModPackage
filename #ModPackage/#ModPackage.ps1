@@ -59,7 +59,7 @@ function New-UniversalModPackage {
 
     }
     process {
-        $regexAny = ".*", "*.7z", "*.bak", "*.bat", "*.iemod", "*.rar", "*.tar*", "*.tmp", "*.temp", "*.zip", 'backup', 'bgforge.ini', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
+        $regexAny = ".*", "*.bak", "*.iemod", "*.tmp", "*.temp", 'backup', 'bgforge.ini', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
         $excludedAny = Get-ChildItem -Path $ModTopDirectory\$ModID -Recurse -Include $regexAny
 
         #iemod package
