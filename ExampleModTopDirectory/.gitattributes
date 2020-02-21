@@ -1,9 +1,12 @@
-* text eol=crlf
+* text eol=auto
 
 # use export-ignore to skip files when downloading
 **/.* export-ignore
-*.gitignore text eol=crlf
 *.gitattributes text eol=crlf
+*.gitconfig text eol=crlf
+*.github text eol=crlf
+*.gitignore text eol=crlf
+*.gitmodules text eol=crlf
 
 # Common
 *.7z binary
