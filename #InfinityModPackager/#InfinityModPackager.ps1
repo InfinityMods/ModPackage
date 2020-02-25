@@ -16,7 +16,7 @@ function Get-IEModVersion { param($Path)
 
 function New-UniversalModPackage {
     [CmdletBinding()]
-    param ($ModTopDirectory)
+    param ($ModTopLevelDirectory)
 
     begin {
 
@@ -36,7 +36,7 @@ function New-UniversalModPackage {
             Write-Host "Version cut: $($ModVersion -replace "\s+", '_')"
         }
 
-        $iniDataFile = try { Get-ChildItem -Path $ModTopDirectory/$ModMainFolder -Filter $ModID.ini } catch { }
+        $iniDataFile = try { Get-ChildItem -Path $ModTopLevelDirectory/$ModMainFolder -Filter $ModID.ini } catch { }
         if ($iniDataFile) {
             $iniData = try { Get-Content $iniDataFile -EA 0 } catch { }
         }
@@ -54,7 +54,7 @@ function New-UniversalModPackage {
         Write-Host "PackageBaseName: $PackageBaseName"
 
         # cleanup old files
-        Remove-Item -Path "$ModTopDirectory\*.iemod" -Force -EA 0 | Out-Null
+        Remove-Item -Path "$ModTopLevelDirectory\*.iemod" -Force -EA 0 | Out-Null
 
         $outIEMod = "$ModID-iemod"
         $outZip = "$ModID-zip"
@@ -76,19 +76,19 @@ function New-UniversalModPackage {
     }
     process {
         $regexAny = ".*", "*.bak", "*.iemod", "*.tmp", "*.temp", 'backup', 'bgforge.ini', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
-        $excludedAny = Get-ChildItem -Path $ModTopDirectory/$ModMainFolder -Recurse -Include $regexAny
+        $excludedAny = Get-ChildItem -Path $ModTopLevelDirectory/$ModMainFolder -Recurse -Include $regexAny
 
         #iemod package
-        Copy-Item -Path $ModTopDirectory/$ModMainFolder/* -Destination $tempDir/$outIEMod/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
+        Copy-Item -Path $ModTopLevelDirectory/$ModMainFolder/* -Destination $tempDir/$outIEMod/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
 
         Write-Host "Creating $PackageBaseName.iemod" -ForegroundColor Green
 
         # compress iemod package
-        Compress-Archive -Path $tempDir/$outIEMod/* -DestinationPath "$ModTopDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
-        Rename-Item -Path "$ModTopDirectory/$PackageBaseName.zip" -NewName "$ModTopDirectory/$PackageBaseName.iemod" -Force | Out-Null
+        Compress-Archive -Path $tempDir/$outIEMod/* -DestinationPath "$ModTopLevelDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Rename-Item -Path "$ModTopLevelDirectory/$PackageBaseName.zip" -NewName "$ModTopLevelDirectory/$PackageBaseName.iemod" -Force | Out-Null
 
         # zip package
-        Copy-Item -Path $ModTopDirectory/$ModMainFolder/* -Destination $tempDir/$outZip/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
+        Copy-Item -Path $ModTopLevelDirectory/$ModMainFolder/* -Destination $tempDir/$outZip/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
 
         # get latest weidu version
         $datalastRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/weiduorg/weidu/releases/latest" -Method Get
@@ -110,16 +110,16 @@ function New-UniversalModPackage {
 
         Write-Host "Creating $PackageBaseName.zip" -ForegroundColor Green
 
-        Compress-Archive -Path $tempDir/$outZip/* -DestinationPath "$ModTopDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Compress-Archive -Path $tempDir/$outZip/* -DestinationPath "$ModTopLevelDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
     }
     end {
         if ($excludedAny) {
             Write-Warning "Excluded items fom the package:"
-            $excludedAny.FullName.Substring($ModTopDirectory.length) | Write-Warning
+            $excludedAny.FullName.Substring($ModTopLevelDirectory.length) | Write-Warning
         }
     }
 }
 
-New-UniversalModPackage -ModTopDirectory $ModTopDirectory
+New-UniversalModPackage -ModTopLevelDirectory $ModTopLevelDirectory
 
 Write-Host "Finished." -ForegroundColor Green
