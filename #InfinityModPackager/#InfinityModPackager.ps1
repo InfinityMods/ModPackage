@@ -1,6 +1,6 @@
-param([Parameter(Mandatory)]$ModTopDirectory)
+param([Parameter(Mandatory)]$ModTopLevelDirectory)
 
-function Get-IEModVersion ($Path) {
+function Get-IEModVersion { param($Path)
     $regexVersion = [Regex]::new('.*?VERSION(\s*)(|~"|~|"|)(@.+|.+)("~|"|~|)(|\s*)', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
     foreach ($line in [System.IO.File]::ReadLines($Path)) {
         $line = $line -replace "\/\/(.*)(\n|)"
@@ -20,24 +20,38 @@ function New-UniversalModPackage {
 
     begin {
 
-        $ModMainFile = (Get-ChildItem -Path $ModTopDirectory -Recurse -Depth 1 -Include "*.tp2", "*.tp3")[0]
+        $ModMainFile = (Get-ChildItem -Path $ModTopLevelDirectory -Recurse -Depth 1 -Include "*.tp2")[0]
+        $ModMainFolder = $ModMainFile.Directory.BaseName
+
         $ModID = $ModMainFile.BaseName -replace 'setup-'
 
         $weiduExeBaseName = "Setup-$ModID"
 
         $ModVersion = Get-IEModVersion -Path $ModMainFile.FullName
-        if ($null -eq $ModVersion -or $ModVersion -eq '') { $ModVersion = '0.0.0' }
-
-        $iniData = try { Get-Content $ModTopDirectory\$ModID\$ModID.ini -EA 0 } catch { }
-        if ($iniData) {
-            $ModDisplayName = (($iniData | ? { $_ -notlike "*#*" -and $_ -like "Name*=*" }) -split '=')[1].TrimStart(' ').TrimEnd(' ')
-
-            # Github release asset name limitation
-            $PackageName = "$($ModDisplayName -replace "\s",'-')-$($ModVersion -replace "\s",'-')"
-
+        if ($null -eq $ModVersion -or $ModVersion -eq '') {
+            Write-Host "Cannot detect VERSION keyword"
+            Exit 1
         } else {
-            $PackageName = "$($ModID -replace "\s",'-')-$($ModVersion -replace "\s",'-')"
+            Write-Host "Version: $ModVersion"
+            Write-Host "Version cut: $($ModVersion -replace "\s+", '_')"
         }
+
+        $iniDataFile = try { Get-ChildItem -Path $ModTopDirectory/$ModMainFolder -Filter $ModID.ini } catch { }
+        if ($iniDataFile) {
+            $iniData = try { Get-Content $iniDataFile -EA 0 } catch { }
+        }
+        # workaround for Github release asset name limitation
+        if ($iniData) {
+            $ModDisplayName = ((($iniData | ? { $_ -notlike "^\s+#*" -and $_ -like "Name*=*" }) -split '=') -split '#')[1].TrimStart(' ').TrimEnd(' ')
+            $simplePackageBaseName = (($ModDisplayName -replace "\s+", '_') -replace "\W") -replace '_+', '-'
+            $simpleVersion = $ModVersion -replace "\s+", '-'
+            $PackageBaseName = ($simplePackageBaseName + '-' + $simpleVersion).ToLower()
+        } else {
+            $simplePackageBaseName = (($ModID -replace "\s+", '_') -replace "\W") -replace '_+', '-'
+            $simpleVersion = $ModVersion -replace "\s+", '-'
+            $PackageBaseName = ($simplePackageBaseName + '-' + $simpleVersion).ToLower()
+        }
+        Write-Host "PackageBaseName: $PackageBaseName"
 
         # cleanup old files
         Remove-Item -Path "$ModTopDirectory\*.iemod" -Force -EA 0 | Out-Null
@@ -54,52 +68,54 @@ function New-UniversalModPackage {
 
         Remove-Item $tempDir -Recurse -Force -EA 0 | Out-Null
         New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
-        New-Item -Path $tempDir\$outIEMod\$ModID -ItemType Directory -Force | Out-Null
-        New-Item -Path $tempDir\$outZip\$ModID -ItemType Directory -Force | Out-Null
+        New-Item -Path $tempDir/$outIEMod/$ModMainFolder -ItemType Directory -Force | Out-Null
+        New-Item -Path $tempDir/$outZip/$ModMainFolder -ItemType Directory -Force | Out-Null
 
+        Write-Host "$tempDir/$outIEMod/$ModMainFolder"
+        Write-Host "$tempDir/$outZip/$ModMainFolder"
     }
     process {
         $regexAny = ".*", "*.bak", "*.iemod", "*.tmp", "*.temp", 'backup', 'bgforge.ini', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
-        $excludedAny = Get-ChildItem -Path $ModTopDirectory\$ModID -Recurse -Include $regexAny
+        $excludedAny = Get-ChildItem -Path $ModTopDirectory/$ModMainFolder -Recurse -Include $regexAny
 
         #iemod package
-        Copy-Item -Path $ModTopDirectory\$ModID\* -Destination $tempDir\$outIEMod\$ModID -Recurse -Exclude $regexAny | Out-Null
+        Copy-Item -Path $ModTopDirectory/$ModMainFolder/* -Destination $tempDir/$outIEMod/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
 
-        Write-Host "Creating $PackageName.iemod" -ForegroundColor Green
+        Write-Host "Creating $PackageBaseName.iemod" -ForegroundColor Green
 
-        Compress-Archive -Path $tempDir\$outIEMod\* -DestinationPath "$ModTopDirectory\$PackageName.zip" -Force -CompressionLevel Optimal | Out-Null
-        Rename-Item -Path "$ModTopDirectory\$PackageName.zip" -NewName "$PackageName.iemod" -Force | Out-Null
+        # compress iemod package
+        Compress-Archive -Path $tempDir/$outIEMod/* -DestinationPath "$ModTopDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Rename-Item -Path "$ModTopDirectory/$PackageBaseName.zip" -NewName "$ModTopDirectory/$PackageBaseName.iemod" -Force | Out-Null
 
         # zip package
-        Copy-Item -Path $ModTopDirectory\$ModID\* -Destination $tempDir\$outZip\$ModID -Recurse -Exclude $regexAny | Out-Null
+        Copy-Item -Path $ModTopDirectory/$ModMainFolder/* -Destination $tempDir/$outZip/$ModMainFolder -Recurse -Exclude $regexAny | Out-Null
 
         # get latest weidu version
-        $datalastRelease = Invoke-RestMethod -Uri 'https://api.github.com/repos/weiduorg/weidu/releases/latest' -Method Get
+        $datalastRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/weiduorg/weidu/releases/latest" -Method Get
         $weiduWinUrl = $datalastRelease.assets | ? name -Match 'Windows' | Select-Object -ExpandProperty browser_download_url
         $weiduMacUrl = $datalastRelease.assets | ? name -Match 'Mac' | Select-Object -ExpandProperty browser_download_url
 
-        Invoke-WebRequest -Uri $weiduWinUrl -Headers $Headers -OutFile "$tempDir\WeiDU-Windows.zip" -PassThru | Out-Null
-        Expand-Archive -Path "$tempDir\WeiDU-Windows.zip" -DestinationPath "$tempDir\" | Out-Null
+        Invoke-WebRequest -Uri $weiduWinUrl -Headers $Headers -OutFile "$tempDir/WeiDU-Windows.zip" -PassThru | Out-Null
+        Expand-Archive -Path "$tempDir/WeiDU-Windows.zip" -DestinationPath "$tempDir/" | Out-Null
 
-        Invoke-WebRequest -Uri $weiduMacUrl -Headers $Headers -OutFile "$tempDir\WeiDU-Mac.zip" -PassThru | Out-Null
-        Expand-Archive -Path "$tempDir\WeiDU-Mac.zip" -DestinationPath "$tempDir\" | Out-Null
+        Invoke-WebRequest -Uri $weiduMacUrl -Headers $Headers -OutFile "$tempDir/WeiDU-Mac.zip" -PassThru | Out-Null
+        Expand-Archive -Path "$tempDir/WeiDU-Mac.zip" -DestinationPath "$tempDir/" | Out-Null
 
-        # Copy latest WeiDU versions
-        Copy-Item "$tempDir\WeiDU-Windows\bin\amd64\weidu.exe" "$tempDir\$outZip\$weiduExeBaseName.exe" | Out-Null
-        Copy-Item "$tempDir\WeiDU-Mac\bin\amd64\weidu" "$tempDir\$outZip\$($weiduExeBaseName.tolower())" | Out-Null
+        # copy latest WeiDU version
+        Copy-Item "$tempDir/WeiDU-Windows/bin/amd64/weidu.exe" "$tempDir/$outZip/$weiduExeBaseName.exe" | Out-Null
+        Copy-Item "$tempDir/WeiDU-Mac/bin/amd64/weidu" "$tempDir/$outZip/$($weiduExeBaseName.tolower())" | Out-Null
 
         # Create .command script
-        'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' + "`n" | Set-Content -Path "$tempDir\$outZip\$($weiduExeBaseName.tolower()).command" | Out-Null
+        'cd "${0%/*}"' + "`n" + 'ScriptName="${0##*/}"' + "`n" + './${ScriptName%.*}' + "`n" | Set-Content -Path "$tempDir/$outZip/$($weiduExeBaseName.tolower()).command" | Out-Null
 
-        Write-Host "Creating $PackageName.zip" -ForegroundColor Green
+        Write-Host "Creating $PackageBaseName.zip" -ForegroundColor Green
 
-        Compress-Archive -Path $tempDir\$outZip\* -DestinationPath "$ModTopDirectory\$PackageName.zip" -Force -CompressionLevel Optimal | Out-Null
+        Compress-Archive -Path $tempDir/$outZip/* -DestinationPath "$ModTopDirectory/$PackageBaseName.zip" -Force -CompressionLevel Optimal | Out-Null
     }
     end {
         if ($excludedAny) {
             Write-Warning "Excluded items fom the package:"
             $excludedAny.FullName.Substring($ModTopDirectory.length) | Write-Warning
-            pause
         }
     }
 }
