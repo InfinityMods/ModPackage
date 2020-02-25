@@ -1,1 +1,1 @@
-# ModPackage
+# Infinity Packager
