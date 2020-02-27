@@ -85,7 +85,7 @@ Write-Host "$tempDir/$outZip/$ModMainFolder"
 
 #region Process
 
-$regexAny = ".*", "*.bak", "*.iemod", "*.tmp", "*.temp", 'backup', 'bgforge.ini', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
+$regexAny = ".*", "*.bak", "*.iemod", "*.tmp", "*.temp", 'backup', 'bgforge.yml', 'Thumbs.db', 'ehthumbs.db', '__macosx', '$RECYCLE.BIN'
 $excludedAny = Get-ChildItem -Path $ModTopLevelDirectory/$ModMainFolder -Recurse -Include $regexAny
 
 #iemod package
